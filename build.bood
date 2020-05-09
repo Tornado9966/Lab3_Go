@@ -1,0 +1,19 @@
+go_binary {
+  name: "server",
+  pkg: "./cmd/server",
+  srcs: [
+    "httptools/**/*.go",
+    "signal/**/*.go",
+    "cmd/server/*.go"
+  ]
+}
+
+go_binary {
+  name: "lb",
+  pkg: "./cmd/lb",
+  srcs: [
+    "httptools/**/*.go",
+    "signal/**/*.go",
+    "cmd/lb/*.go"
+  ]
+}
