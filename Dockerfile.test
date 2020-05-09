@@ -2,7 +2,7 @@ FROM golang:1.14 as build
 
 RUN apt-get update && apt-get install -y ninja-build
 
-RUN go get -u github.com/Tornado9966/Lab2_Go/cmd/bood
+RUN go get -u github.com/Tornado9966/Lab2_Go/build/cmd/bood
 
 WORKDIR /go/src/practice-3
 COPY . .
