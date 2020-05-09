@@ -10,8 +10,8 @@ import (
 	"time"
 	"hash/fnv"
 
-	"github.com/Iluysha/Lab3/httptools"
-	"github.com/Iluysha/Lab3/signal"
+	"github.com/Tornado9966/Lab3_Go/httptools"
+	"github.com/Tornado9966/Lab3_Go/signal"
 ) 
 
 var (
