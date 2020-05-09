@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"flag"
+	"flag" 
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"time"
+	"hash/fnv"
 
-	"github.com/roman-mazur/design-practice-3-template/httptools"
-	"github.com/roman-mazur/design-practice-3-template/signal"
-)
+	"github.com/Iluysha/Lab3/httptools"
+	"github.com/Iluysha/Lab3/signal"
+) 
 
 var (
 	port = flag.Int("port", 8090, "load balancer port")
@@ -19,15 +20,11 @@ var (
 	https = flag.Bool("https", false, "whether backends support HTTPs")
 
 	traceEnabled = flag.Bool("trace", false, "whether to include tracing information into responses")
-)
 
-var (
 	timeout = time.Duration(*timeoutSec) * time.Second
-	serversPool = []string{
-		"server1:8080",
-		"server2:8080",
-		"server3:8080",
-	}
+
+	serversPool map[int]string
+	healthyServersPool []int
 )
 
 func scheme() string {
@@ -84,22 +81,78 @@ func forward(dst string, rw http.ResponseWriter, r *http.Request) error {
 	}
 }
 
+func hash(s string) int {
+        h := fnv.New32a()
+        h.Write([]byte(s))
+        return (int)(h.Sum32())
+}
+
+func find(slice []int, key int) (int, bool) { 
+	for i, item := range slice {
+        	if item == key {
+        		return i, true
+        	}
+	}
+	return -1, false
+}
+
+func remove(slice []int, key int) []int { 
+        if i, exist := find(slice, key); exist {
+       		return append(slice[:i], slice[i+1:]...)
+       	}
+	return slice
+}
+
+func checkServer(server string, key int) {
+	healthy := health(server)
+	log.Println(server, healthy)
+	if(healthy) {
+		if _, exist := find(healthyServersPool, key); !exist {
+			healthyServersPool = append(healthyServersPool, key)
+		}
+	} else {
+		healthyServersPool = remove(healthyServersPool, key)
+	}
+}
+
+func chooseServer(addr string) string {
+	hash := hash(addr)
+	if _, exist := find(healthyServersPool, hash % len(serversPool)); exist {
+		return serversPool[hash % len(serversPool)]
+	} else {
+		return serversPool[healthyServersPool[hash % len(healthyServersPool)]]
+	}
+}
+
 func main() {
 	flag.Parse()
 
-	// TODO: Використовуйте дані про стан сервреа, щоб підтримувати список тих серверів, яким можна відправляти ззапит.
-	for _, server := range serversPool {
+	serversPool = make(map[int]string)
+
+	serversPool[0] = "server1:8080"
+	serversPool[1] = "server2:8080"
+	serversPool[2] = "server3:8080"
+
+	checkServer("server1:8080", 0)
+	checkServer("server2:8080", 1)
+	checkServer("server3:8080", 2)
+
+	for key, server := range serversPool {
 		server := server
+		key := key
 		go func() {
 			for range time.Tick(10 * time.Second) {
-				log.Println(server, health(server))
+				checkServer(server, key)
 			}
 		}()
 	}
 
 	frontend := httptools.CreateServer(*port, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		// TODO: Рееалізуйте свій алгоритм балансувальника.
-		forward(serversPool[0], rw, r)
+		if (len(healthyServersPool) != 0) {
+			forward(chooseServer(r.RemoteAddr), rw, r) 
+		} else {
+			log.Println("All servers are busy. Wait please.")
+		}
 	}))
 
 	log.Println("Starting load balancer...")
