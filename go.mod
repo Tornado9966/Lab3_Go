@@ -1,3 +1,3 @@
-module github.com/roman-mazur/design-practice-3-template
+module github.com/Tornado9966/Lab3_Go
 
 go 1.14
