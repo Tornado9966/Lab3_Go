@@ -22,9 +22,10 @@ func (s * TestSuite) TestBalancer(c *C){
   var client3 = http.Client{ Timeout: 3 * time.Second,}
 
   count  := 0
-  count1 := 0
-  count2 := 0
-  count3 := 0
+  serversPool = make(map[string]int)
+  serversPool["server1:8080"] = 0
+  serversPool["server2:8080"] = 0
+  serversPool["server3:8080"] = 0
 
   for range time.Tick(3 * time.Second) {
     
@@ -36,15 +37,9 @@ func (s * TestSuite) TestBalancer(c *C){
     if err2 != nil {c.Error(err2) }
     if err3 != nil {c.Error(err3) }
 
-    if(resp1.Header.Get("lb-from") == "server1:8080"){count1++}
-    if(resp1.Header.Get("lb-from") == "server2:8080"){count2++}
-    if(resp1.Header.Get("lb-from") == "server3:8080"){count3++}
-    if(resp2.Header.Get("lb-from") == "server1:8080"){count1++}
-    if(resp2.Header.Get("lb-from") == "server2:8080"){count2++}
-    if(resp2.Header.Get("lb-from") == "server3:8080"){count3++}
-    if(resp3.Header.Get("lb-from") == "server1:8080"){count1++}
-    if(resp3.Header.Get("lb-from") == "server2:8080"){count2++}
-    if(resp3.Header.Get("lb-from") == "server3:8080"){count3++}
+    serversPool[resp1.Header.Get("lb-from")]++ 
+    serversPool[resp2.Header.Get("lb-from")]++ 
+    serversPool[resp3.Header.Get("lb-from")]++ 
 
     fmt.Println("1 client: ", resp1.Header.Get("lb-from"))
     fmt.Println("2 client: ", resp2.Header.Get("lb-from"))
@@ -53,9 +48,10 @@ func (s * TestSuite) TestBalancer(c *C){
     count++
     if(count == 20){break}
   }
-  fmt.Println("Responses from server 1: ", count1)
-  fmt.Println("Responses from server 2: ", count2)
-  fmt.Println("Responses from server 3: ", count3)
+
+  fmt.Println("Responses from server 1: ", serversPool["server1:8080"] )
+  fmt.Println("Responses from server 2: ", serversPool["server2:8080"] )
+  fmt.Println("Responses from server 3: ", serversPool["server3:8080"] )
 }
 
 func BenchmarkBalancer(b *testing.B) {
