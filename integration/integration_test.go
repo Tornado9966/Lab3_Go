@@ -22,7 +22,7 @@ func (s * TestSuite) TestBalancer(c *C){
   var client3 = http.Client{ Timeout: 3 * time.Second,}
 
   count  := 0
-  serversPool = make(map[string]int)
+  var serversPool = make(map[string]int)
   serversPool["server1:8080"] = 0
   serversPool["server2:8080"] = 0
   serversPool["server3:8080"] = 0
